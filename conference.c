@@ -311,8 +311,13 @@ int remove_member(struct ast_conference* conf, struct ast_conf_member* member )
 
     while ( member_list != NULL ) 
     {
-    	if ( member_list == member ) 
-    	{
+        if ( member_list == member ) 
+        {
+        // Check our flag to kick everyone on the conference if
+        // MODERATOR leaves.
+        if ( member->auto_destroy_on_exit == 1 )
+            add_command_to_queue(conf, member, CONF_ACTION_HANGUP, 0, "");
+
 	    //
 	    // if this is the first member in the linked-list,
 	    // skip over the first member in the list, else

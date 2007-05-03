@@ -121,6 +121,8 @@ struct ast_conf_member
 
 	// THOSE ARE PASSED TO THE CONFERENCE
 	short auto_destroy;
+
+        short auto_destroy_on_exit;
 } ;
 
 

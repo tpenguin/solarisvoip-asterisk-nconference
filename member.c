@@ -696,6 +696,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     // keep pointer to member's channel
     member->chan = chan ;
     member->auto_destroy = 1 ;
+    member->auto_destroy_on_exit = 0 ;
 
     // copy the channel name
     member->channel_name = malloc( strlen( chan->name ) + 1 ) ;
@@ -811,6 +812,10 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
 		    if ( member->type == MEMBERTYPE_MASTER )
 			member->auto_destroy = 0;
 		    break;
+		case 'X': // Auto destroy on MASTER exit
+                    if ( member->type == MEMBERTYPE_MASTER )
+                        member->auto_destroy_on_exit = 1;
+                    break;
 		case 'q': // Quiet mode
 		    member->quiet_mode = 1;
 		    break;

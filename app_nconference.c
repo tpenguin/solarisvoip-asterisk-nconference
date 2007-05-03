@@ -50,6 +50,7 @@ static char *descrip = APP_CONFERENCE_NAME "(confno/options/pin):\n"
 "   'V': Do VAD (Voice Activity Detection).\n"
 #endif
 "   'd': Disable DTMF handling (keypad functions).\n"
+"   'X': Destroy conference when Moderator quits.\n"
 "   'x': Don't auto destroy conference when all users quit.\n"
 "        (it's destroyed after 300 seconds of inactivity)\n"
 "	 Note: works only with M option set.\n"
