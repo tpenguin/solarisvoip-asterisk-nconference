@@ -44,9 +44,12 @@ endif
 
 INSTALL=install
 INSTALL_PREFIX=
-ASTLIBDIR=$(INSTALL_PREFIX)/opt/asterisk/lib
+ifeq ($(OSARCH),SunOS)
+	ASTLIBDIR=$(INSTALL_PREFIX)/opt/asterisk/lib
+else
+	ASTLIBDIR=$(INSTALL_PREFIX)/usr/lib/asterisk
+endif
 MODULES_DIR=$(ASTLIBDIR)/modules
-
 all: depend $(MODS)
 
 install: all
