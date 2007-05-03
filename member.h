@@ -123,6 +123,8 @@ struct ast_conf_member
 	short auto_destroy;
 
         short auto_destroy_on_exit;
+
+	char clid[80];
 } ;
 
 

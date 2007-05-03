@@ -246,7 +246,6 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 
 void add_member( struct ast_conference *conf, struct ast_conf_member *member ) 
 {
-    char cnum[80];
 
     if ( conf == NULL ) 
     {
@@ -265,12 +264,15 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
     // release the conference lock
     ast_mutex_unlock( &conf->lock ) ;	
 
+    memset(member->clid, 0, sizeof(member->clid));
+
     if ( (member->chan != NULL) && (member->chan->cid.cid_num != NULL) )
-	strncpy( cnum, member->chan->cid.cid_num, sizeof(cnum) );
+	strncpy( member->clid, member->chan->cid.cid_num, sizeof(member->clid) );
     else
-	strncpy( cnum, "", sizeof(cnum) );
+	strncpy( member->clid, "", sizeof(member->clid) );
+
     queue_incoming_silent_frame(member,2);
-    add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, cnum );
+    add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
     add_command_to_queue( conf, member, CONF_ACTION_QUEUE_SOUND  , 1, "conf-hasjoin" );
 
     ast_log( AST_CONF_DEBUG, "member added to conference, name => %s\n", conf->name ) ;	
@@ -389,18 +391,13 @@ void conference_exec( struct ast_conference *conf )
 	    // check for dead members
 	    if ( member->remove_flag == 1 ) 
 	    {
-		char cnum[80];
 	    	ast_log( AST_CONF_DEBUG, "found member slated for removal, channel => %s\n", member->channel_name ) ;
 	    	temp_member = member->next ;
-		if ( (member->chan != NULL) && (member->chan->cid.cid_num != NULL) )
-		    strncpy( cnum,member->chan->cid.cid_num,sizeof(cnum) );
-		else
-		    strncpy( cnum, "", sizeof(cnum) );
-		queue_incoming_silent_frame(member,2);
+			queue_incoming_silent_frame(member,2);
+			add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
+			add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_SOUND , 1, "conf-hasleft" );
 	    	remove_member( conf, member ) ;
 	    	member = temp_member ;
-	        add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_NUMBER , 1, cnum );
-	        add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_SOUND , 1, "conf-hasleft" );
 	    	continue ;
 	    }
 	    ast_mutex_unlock( &member->lock ) ;
