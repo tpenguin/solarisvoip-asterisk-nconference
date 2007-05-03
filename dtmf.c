@@ -66,8 +66,10 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    }
 		} 
 		else {
-    		    ast_moh_stop(member->chan);
-		    ast_generator_activate(member->chan,&membergen,member);
+			ast_moh_stop(member->chan);
+			member->is_speaking = 1;
+			send_state_change_notifications(member);
+			ast_generator_activate(member->chan,&membergen,member);
 		}
 		ast_log(AST_CONF_DEBUG,"Volume MUTE (muted: %d)\n",member->talk_mute);
 		break;
