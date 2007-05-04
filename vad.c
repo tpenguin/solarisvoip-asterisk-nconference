@@ -39,7 +39,7 @@ static int detect_silence(char *buf, int len, int threshold)
 	    totover++;
 	}
     }
-    //ast_log(LOG_WARNING,"THR: %d %d\n", (max-min), threshold );
+    //ast_log(LOG_WARNING,"THR: %d %d\n", totover, threshold );
     if( totover > len % 5)
 	return 0;
 

@@ -145,8 +145,6 @@ struct ast_frame* get_outgoing_frame( struct ast_conference *conf, struct ast_co
     	return NULL ;
     }
 
-    memset(member->framedata,0,sizeof(member->framedata));
-
     //***********************************
     // Mixing procedure
     //***********************************

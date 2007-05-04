@@ -96,13 +96,21 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    ast_log(AST_CONF_DEBUG,"Member not enabled for VAD\n");
 		break;
 	    case '5':
+		member->talk_mute = (member->talk_mute == 0 ) ? 1 : 0;
 		queue_incoming_silent_frame(member,3);
-		member->talk_mute =  !(member->talk_mute);
-		if (member->talk_mute)
-		    conference_queue_sound( member, "conf-muted" );
-		else
-		    conference_queue_sound( member, "conf-unmuted" );
-		ast_log(AST_CONF_DEBUG,"Member Talk MUTE set to %d\n",member->dont_play_any_sound);
+		if ( member->talk_mute == 1 ) {
+			if ( member->is_speaking == 1 ) {
+				member->is_speaking = 0;
+				send_state_change_notifications(member);
+			}
+			conference_queue_sound( member, "conf-muted" );
+		} else {
+			queue_incoming_silent_frame(member,3);
+			member->is_speaking = 1;
+			send_state_change_notifications(member);
+			conference_queue_sound( member, "conf-unmuted" );
+		}
+		ast_log(AST_CONF_DEBUG,"Member Talk MUTE set to %d\n", member->talk_mute);
 		break;
 	    case '6':
 		member->dont_play_any_sound =  !(member->dont_play_any_sound);

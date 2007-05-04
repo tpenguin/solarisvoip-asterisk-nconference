@@ -29,12 +29,16 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 2308 $");
 static int conf_play_soundfile( struct ast_conf_member *member, char * file ) 
 {
     int res = 0;
+    short prev_is_speaking;
 
     if ( member->dont_play_any_sound ) 
 	return 0;
 
     if ( !member->chan ) 
 	return 0;
+
+    prev_is_speaking = member->is_speaking;
+    member->is_speaking = 0;
 
     ast_stopstream(member->chan);
 
@@ -56,6 +60,8 @@ static int conf_play_soundfile( struct ast_conf_member *member, char * file )
 
     ast_set_write_format( member->chan, AST_FORMAT_SLINEAR );
     ast_generator_activate(member->chan,&membergen,member);
+
+    member->is_speaking = prev_is_speaking;
 
     return res;
 }
