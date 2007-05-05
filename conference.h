@@ -58,6 +58,9 @@ struct ast_conference
 	// Is it locked ? (No more members)
 	short is_locked;
 
+    // AGI ?
+    short agi ;
+
 	//Command queue to be executed on all members
 	struct ast_conf_command_queue *command_queue;
 	// single-linked list of members in conference
@@ -93,3 +96,4 @@ void conference_exec( struct ast_conference *conf );
 struct ast_conference* create_conf( char* name, struct ast_conf_member* member);
 int conf_do_originate(struct ast_conf_member *member, char *ext);
 int conference_set_pin(struct ast_conf_member *member, char *pin);
+void handle_conf_agi_end( const char* name, struct ast_conf_member *member );

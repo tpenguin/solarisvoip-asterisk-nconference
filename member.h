@@ -125,6 +125,10 @@ struct ast_conf_member
         short auto_destroy_on_exit;
 
 	char clid[80];
+
+    short monitor;
+    short monitor_join;
+    short agi;
 } ;
 
 

@@ -335,6 +335,7 @@ int member_exec( struct ast_channel* chan, void* data ) {
     struct ast_conference  *conf   	= NULL;
     struct ast_conf_member *member	= NULL;
     struct ast_frame *f		= NULL;
+    struct ast_app *app = NULL;
 
     ast_log( AST_CONF_DEBUG, "Launching NConference %s\n", "$Revision: 2325 $" ) ;
 
@@ -420,6 +421,36 @@ int member_exec( struct ast_channel* chan, void* data ) {
     //
 	
     ast_log( AST_CONF_DEBUG, "begin member event loop, channel => %s\n", chan->name ) ;
+
+    // Add user to monitor
+    if (member->monitor) {
+        const char * const monitorfilename = pbx_builtin_getvar_helper(chan, "MONITOR_FILENAME");
+        if (monitorfilename) {
+            ast_monitor_start(chan, NULL, monitorfilename, 1);
+        } else if (chan->cdr) {
+            ast_monitor_start(chan, NULL, chan->cdr->uniqueid, 1);
+        } else {
+            char tmpid[256];
+            snprintf(tmpid, sizeof(tmpid), "chan-%x", rand());
+            ast_monitor_start(chan, NULL, tmpid, 1);
+        }
+        if (member->monitor_join) {
+            ast_monitor_setjoinfiles(chan, 1);
+        }
+    }
+
+    // Run AGI script
+    if (member->agi) {
+        char * agi = pbx_builtin_getvar_helper(chan, "AGI_CONF_JOIN");
+        if (agi) {
+            app = pbx_findapp("agi");
+            if (app) {
+                pbx_exec(chan, app, agi, 1);
+            }
+        } else {
+            ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_JOIN missing.\n");
+        }
+    }
 
     // Activate the generator for the channel.
     res = ast_conf_member_genactivate( member );
@@ -579,9 +610,22 @@ int member_exec( struct ast_channel* chan, void* data ) {
     // clean up
     //
 
-    if ( member != NULL ) 
-	member->remove_flag = 1 ;
-
+    if ( member != NULL ) {
+        // Run AGI script
+        if (member->agi) {
+            char * agi = pbx_builtin_getvar_helper(chan, "AGI_CONF_LEAVE");
+            if (agi) {
+                app = pbx_findapp("agi");
+                if (app) {
+                    pbx_exec(chan, app, agi, 1);
+                }
+            } else {
+                ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_LEAVE missing.\n");
+            }
+        }
+        handle_conf_agi_end(conf->name, member);        
+        member->remove_flag = 1 ;
+    }
     ast_log( AST_CONF_DEBUG, "end member event loop, time_entered => %ld -  removal: %d\n", member->time_entered.tv_sec, member->remove_flag ) ;
 
     //ast_log( AST_CONF_DEBUG, "Deactivating generator - Channel => %s\n", member->chan->name ) ;
@@ -711,6 +755,9 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     // flags
     member->remove_flag = 0 ;
     member->force_remove_flag = 0 ;
+    member->monitor = 0 ;
+    member->monitor_join = 0 ;
+    member->agi = 0 ;
 
     // record start time
     gettimeofday( &member->time_entered, NULL ) ;
@@ -816,6 +863,15 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
                     if ( member->type == MEMBERTYPE_MASTER )
                         member->auto_destroy_on_exit = 1;
                     break;
+        case 'r':
+            member->monitor = 1 ;
+            break;
+        case 'R':
+            member->monitor_join = 1 ;
+            break;
+        case 'A':
+            member->agi = 1 ;
+            break;
 		case 'q': // Quiet mode
 		    member->quiet_mode = 1;
 		    break;

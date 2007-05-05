@@ -368,7 +368,8 @@ void conference_exec( struct ast_conference *conf )
 
     struct ast_conf_member *member, *temp_member ;
     struct timeval empty_start = {0,0}, tv = {0,0} ;
-	
+	short mcnt = 0;
+
     ast_log( AST_CONF_DEBUG, "Entered conference_exec, name => %s\n", conf->name ) ;
 	
     //
@@ -387,10 +388,25 @@ void conference_exec( struct ast_conference *conf )
 	// loop over member list to retrieve queued frames
 	while ( member != NULL )
 	{
+		mcnt++;
 	    ast_mutex_lock( &member->lock ) ;
 	    // check for dead members
 	    if ( member->remove_flag == 1 ) 
 	    {
+			if (mcnt == 1 && member->next == NULL) {
+				// Run AGI script
+				if (member->agi) {
+					char * agi = pbx_builtin_getvar_helper(member->chan, "AGI_CONF_END");
+					if (agi) {
+						struct ast_app * app = pbx_findapp("agi");
+						if (app) {
+							pbx_exec(member->chan, app, agi, 1);
+						}
+					} else {
+						ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_END missing.\n");
+					}
+				}
+			}
 	    	ast_log( AST_CONF_DEBUG, "found member slated for removal, channel => %s\n", member->channel_name ) ;
 	    	temp_member = member->next ;
 			queue_incoming_silent_frame(member,2);
@@ -403,6 +419,7 @@ void conference_exec( struct ast_conference *conf )
 	    ast_mutex_unlock( &member->lock ) ;
 	    // adjust our pointer to the next inline
 	    member = member->next ;
+
 	} 
 	//
 	// break, if we have no more members
@@ -670,7 +687,6 @@ void remove_conf( struct ast_conference *conf )
 		free(cqd);
 	    }
 
-
 	    free( conf_current ) ;
 	    conf_current = NULL ;
 			
@@ -732,6 +748,20 @@ struct ast_conference* start_conference( struct ast_conf_member* member )
 	    ast_mutex_unlock( &start_stop_conf_lock ) ;
 	    return NULL ;
 	}
+
+    // Run AGI script
+    if (member->agi) {
+		conf->agi = 1 ;
+        char * agi = pbx_builtin_getvar_helper(member->chan, "AGI_CONF_START");
+        if (agi) {
+            struct ast_app * app = pbx_findapp("agi");
+            if (app) {
+                pbx_exec(member->chan, app, agi, 1);
+            }
+        } else {
+            ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_START missing.\n");
+        }
+    }
     }
     else
     {
@@ -992,3 +1022,55 @@ int conference_parse_admin_command(struct ast_conf_member *member) {
 
     return 1;
 }
+
+void handle_conf_agi_end( const char* name, struct ast_conf_member *member ) 
+{	
+    struct ast_conference *conf = conflist ;
+	short run_agi = 0 ;
+
+    // no conferences exist
+    if ( conflist == NULL ) 
+    {
+    	return ;
+    }
+	
+    // acquire mutex
+    ast_mutex_lock( &conflist_lock ) ;
+
+    // loop through conf list
+    while ( conf != NULL ) 
+    {
+	if ( strncasecmp( (char*)&(conf->name), name, sizeof(conf->name) ) == 0 )
+	{
+	    // found conf name match 
+	    ast_log( AST_CONF_DEBUG, "found conference in conflist, name => %s\n", name ) ;
+		if (conf->membercount <= 1) {
+			run_agi = 1 ;
+		}
+	    break ;
+	}
+	conf = conf->next ;
+    }
+
+    // release mutex
+    ast_mutex_unlock( &conflist_lock ) ;
+
+    if ( conf == NULL )
+    {
+		run_agi = 1;
+    }
+
+	// Run AGI script
+	if (run_agi) {
+		char * agi = pbx_builtin_getvar_helper(member->chan, "AGI_CONF_END");
+		if (agi) {
+			struct ast_app * app = pbx_findapp("agi");
+			if (app) {
+				pbx_exec(member->chan, app, agi, 1);
+			}
+		} else {
+			ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_END missing.\n");
+		}
+	}
+}
+

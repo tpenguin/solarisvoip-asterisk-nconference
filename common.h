@@ -41,6 +41,7 @@
 #include "asterisk/translate.h"
 #include "asterisk/frame.h"
 #include "asterisk/features.h"
+#include "asterisk/monitor.h"
 
 /* standard includes */
 #include <stdio.h>
