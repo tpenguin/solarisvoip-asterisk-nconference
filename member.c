@@ -450,6 +450,7 @@ int member_exec( struct ast_channel* chan, void* data ) {
         } else {
             ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_JOIN missing.\n");
         }
+        conf->agi = 1 ;
     }
 
     // Activate the generator for the channel.
@@ -623,7 +624,8 @@ int member_exec( struct ast_channel* chan, void* data ) {
                 ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_LEAVE missing.\n");
             }
         }
-        handle_conf_agi_end(conf->name, member);        
+        if (conf->agi) 
+            handle_conf_agi_end(conf->name, member);        
         member->remove_flag = 1 ;
     }
     ast_log( AST_CONF_DEBUG, "end member event loop, time_entered => %ld -  removal: %d\n", member->time_entered.tv_sec, member->remove_flag ) ;
