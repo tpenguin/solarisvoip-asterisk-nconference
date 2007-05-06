@@ -128,10 +128,15 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 		    queue_incoming_silent_frame(member,2);
 		    member->talk_mute = cq->param_number;
 		    ast_log(AST_CONF_DEBUG,"(CQ) Member Talk MUTE set to %d\n",member->talk_mute);
-		    if (cq->param_number)
-			conference_queue_sound( member, "conf-muted" );
-		    else
-			conference_queue_sound( member, "conf-unmuted" );
+		    if (cq->param_number) {
+				if (member->is_speaking == 1) {
+					member->is_speaking = 0;
+				}
+				conference_queue_sound( member, "conf-muted" );
+			} else {
+				member->is_speaking = 1;
+				conference_queue_sound( member, "conf-unmuted" );
+			}
 		    ast_mutex_unlock( &member->lock ) ;
 		}
 		// adjust our pointer to the next inline
