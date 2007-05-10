@@ -151,23 +151,25 @@ int process_incoming(struct ast_conf_member *member, struct ast_frame *f)
     //
     // MOH When the user is alone in the conference
     //
-    if ( member->conf->membercount == 1 && 
-	 member->is_on_hold == 0 && 
-	 member->skip_moh_when_alone == 0 
-       ) {
-	ast_moh_start(member->chan,"");
-	member->is_on_hold = 1 ;
-	return 0;
-    }
-
-    if ( member->conf->membercount > 1 && 
-	 member->is_on_hold == 1 && 
-	 member->skip_moh_when_alone == 0 
-       ) {
-	ast_moh_stop(member->chan);
-	ast_generator_activate(member->chan,&membergen,member);
-	member->is_on_hold = 0 ;
-	return 0;
+    if (member->conf != NULL) {
+        if ( member->conf->membercount == 1 && 
+    	 member->is_on_hold == 0 && 
+    	 member->skip_moh_when_alone == 0 
+           ) {
+    	ast_moh_start(member->chan,"");
+    	member->is_on_hold = 1 ;
+    	return 0;
+        }
+    
+        if ( member->conf->membercount > 1 && 
+    	 member->is_on_hold == 1 && 
+    	 member->skip_moh_when_alone == 0 
+           ) {
+    	ast_moh_stop(member->chan);
+    	ast_generator_activate(member->chan,&membergen,member);
+    	member->is_on_hold = 0 ;
+    	return 0;
+        }
     }
 
     if ( member->force_remove_flag == 1 ) {
@@ -396,10 +398,10 @@ int member_exec( struct ast_channel* chan, void* data ) {
 	return -1 ;
     } else {
 	if (conf->is_locked && (member->type != MEMBERTYPE_MASTER) ) {
-	    if ( strcmp(conf->pin,member->pin) ) {
-		conference_queue_sound(member,"conf-locked");
-		conf_play_soundqueue( member ); 
-		member->force_remove_flag = 1 ;
+	    if (strlen(conf->pin) == 0 || strncmp(conf->pin,member->pin,sizeof(conf->pin)) ) {
+		/* Conference is Locked and an invalid PIN was entered */
+		remove_member(conf, member);
+		return -2 ;
 	    }
 	}  else {
 	    member->conf = conf;

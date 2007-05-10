@@ -113,6 +113,12 @@ int app_conference_main( struct ast_channel* chan, void* data ) {
 	struct localuser *u ;
 	LOCAL_USER_ADD( u ) ; 
 	res = member_exec( chan, data ) ;
-	LOCAL_USER_REMOVE( u ) ;	
+	if (res == -2) {
+		/* Conference was locked and user did not have valid PIN - Jump to n+101 */
+		ast_log(LOG_NOTICE, "Conference is locked so I am going to try and jump n + 101\n");
+		ast_goto_if_exists(chan, chan->context, chan->exten, chan->priority + 101);
+		res = 0;
+	}
+	LOCAL_USER_REMOVE( u ) ;
 	return res ;
 }

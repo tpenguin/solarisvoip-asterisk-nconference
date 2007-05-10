@@ -251,6 +251,7 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 
 void add_member( struct ast_conference *conf, struct ast_conf_member *member ) 
 {
+	short announce = 1;
 
     if ( conf == NULL ) 
     {
@@ -276,20 +277,33 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
     else
 	strncpy( member->clid, "", sizeof(member->clid) );
 
-    queue_incoming_silent_frame(member,2);
-    add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
-    add_command_to_queue( conf, member, CONF_ACTION_QUEUE_SOUND  , 1, "conf-hasjoin" );
+	/* We have a slight bug here.  Because of the architecture, we always 
+	 * add_member which may not be a valid idea if the conference was locked
+	 * and we are going to immediate remove the caller.
+	 */
+	if (conf->is_locked && (member->type != MEMBERTYPE_MASTER) ) {
+	    if (strlen(conf->pin) == 0 || strncmp(conf->pin,member->pin,sizeof(conf->pin)) ) {
+			/* dont play file */
+			announce = 0;
+		}
+	}
 
-    ast_log( AST_CONF_DEBUG, "member added to conference, name => %s\n", conf->name ) ;	
+	if (announce) {
+		queue_incoming_silent_frame(member,2);
+		add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
+		add_command_to_queue( conf, member, CONF_ACTION_QUEUE_SOUND  , 1, "conf-hasjoin" );
+	
+		ast_log( AST_CONF_DEBUG, "member added to conference, name => %s\n", conf->name ) ;	
+	
+		manager_event(
+		EVENT_FLAG_CALL, 
+		APP_CONFERENCE_MANID"Join", 
+		"Channel: %s\r\n",
+		member->chan->name
+		) ;
+	}
 
-    manager_event(
-	EVENT_FLAG_CALL, 
-	APP_CONFERENCE_MANID"Join", 
-	"Channel: %s\r\n",
-	member->chan->name
-    ) ;
-
-    return ;
+	return ;
 }
 
 
