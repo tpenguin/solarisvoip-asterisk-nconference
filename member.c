@@ -762,6 +762,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     member->monitor = 0 ;
     member->monitor_join = 0 ;
     member->agi = 0 ;
+	member->disable_dtmf_zero = 0 ;
 
     // record start time
     gettimeofday( &member->time_entered, NULL ) ;
@@ -881,7 +882,9 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
 		case 'q': // Quiet mode
 		    member->quiet_mode = 1;
 		    break;
-
+		case '0':
+			member->disable_dtmf_zero = 1;
+			break;
 		default:
 		    ast_log( LOG_WARNING, "received invalid flag, chan => %s, flag => %c\n", 
 			    chan->name, flags[i] ) ;			

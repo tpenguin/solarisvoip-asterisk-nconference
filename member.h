@@ -76,7 +76,7 @@ struct ast_conf_member
 	char dtmf_buffer[64];
 	short dtmf_help_mode;
 	time_t dtmf_ts;
-
+	short disable_dtmf_zero;
 
 
 	// start time

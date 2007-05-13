@@ -126,12 +126,13 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    member->dtmf_long_insert=1;
 			member->dtmf_ts = time(NULL);
 		break;
-	    case '0': {
-		    char buf[10];
-		    snprintf(buf, sizeof(buf), "%d", member->conf->membercount);
-		    conference_queue_sound(member,"conf-thereare");
-		    conference_queue_number(member, buf );
-		    conference_queue_sound(member,"conf-peopleinconf");
+	    case '0': 
+			if (!member->disable_dtmf_zero || member->type == MEMBERTYPE_MASTER) {
+				char buf[10];
+				snprintf(buf, sizeof(buf), "%d", member->conf->membercount);
+				conference_queue_sound(member,"conf-thereare");
+				conference_queue_number(member, buf );
+				conference_queue_sound(member,"conf-peopleinconf");
 		    }
 		break;
 
