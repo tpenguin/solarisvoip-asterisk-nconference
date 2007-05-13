@@ -42,11 +42,6 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode activated\n" );
 		conference_queue_sound( member, "conf-sysop" );
 		break;
-	    case '#': 
-		ast_log(AST_CONF_DEBUG,"Disconnecting member from conference %s after request\n",member->chan->name);
-		member->force_remove_flag = 1 ;
-		ast_softhangup(member->chan,AST_SOFTHANGUP_SHUTDOWN);
-		break;
 	    case '1': 
 		conference_queue_sound( member, "beep" );
 		member->talk_volume = (member->talk_volume > -5) ? member->talk_volume-1 : member->talk_volume;
