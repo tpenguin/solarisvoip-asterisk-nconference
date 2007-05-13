@@ -192,6 +192,27 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 		member = member->next ;
 	    } 
 	    break;
+	case CONF_ACTION_CONSULT_PLAYMOH: 
+	    // get list of conference members
+	    member = conf->memberlist ;
+	    // loop over member list to retrieve queued frames
+	    while ( member != NULL )
+	    {
+		if (member->type != MEMBERTYPE_CONSULTANT && member->type != MEMBERTYPE_MASTER) {;
+		    ast_mutex_lock( &member->lock ) ;
+		    if ( cq->param_number == 1) {
+			member->force_on_hold =  1;
+		    } 
+		    else {
+			member->force_on_hold = -1;
+		    }
+		    ast_mutex_unlock( &member->lock ) ;
+		    ast_log(AST_CONF_DEBUG,"(CQ) Member: consult playing moh set to %d\n",cq->param_number);
+		    // adjust our pointer to the next inline
+		}
+		member = member->next ;
+	    } 
+	    break;
 	case CONF_ACTION_PLAYMOH: 
 	    // get list of conference members
 	    member = conf->memberlist ;
@@ -995,6 +1016,14 @@ int conference_parse_admin_command(struct ast_conf_member *member) {
 	    queue_incoming_silent_frame( member, 2 );
 	    res = conf_do_originate(member,parameters);
 	    break;
+	case '2':
+		if      ( parameters[0] == '0' )
+			add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 0, "" );
+		else if ( parameters[0] == '1' )
+			add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 1, "" );
+		else
+		conference_queue_sound( member, "beeperr" );
+		break;
 	case '4':
 	    if      ( parameters[0] == '0' )
 	        add_command_to_queue( member->conf, member, CONF_ACTION_ENABLE_SOUNDS , 0, "" );

@@ -26,7 +26,8 @@ enum conf_actions {
     CONF_ACTION_MUTE_ALL,
     CONF_ACTION_QUEUE_SOUND,
     CONF_ACTION_QUEUE_NUMBER,
-    CONF_ACTION_PLAYMOH
+    CONF_ACTION_PLAYMOH,
+	CONF_ACTION_CONSULT_PLAYMOH
 };
 
 struct ast_conf_command_queue 
