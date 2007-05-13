@@ -435,6 +435,19 @@ void conference_exec( struct ast_conference *conf )
 	    	member = temp_member ;
 	    	continue ;
 	    }
+
+		// check for DTMF timeout condition
+		if ( member->dtmf_admin_mode || member->dtmf_help_mode || member->dtmf_long_insert ) {
+			// test the time of last key entry
+			if ( member->dtmf_ts < (time(NULL) - AST_CONF_DTMF_TIMEOUT)) {
+				// kick out of DTMF mode
+				ast_log(LOG_NOTICE, "DTMF timeout occurred for user.\n");
+				member->dtmf_admin_mode=0;
+				member->dtmf_help_mode=0;
+				member->dtmf_long_insert=0;
+			}
+		}
+
 	    ast_mutex_unlock( &member->lock ) ;
 	    // adjust our pointer to the next inline
 	    member = member->next ;

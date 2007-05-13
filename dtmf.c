@@ -37,6 +37,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 	    case '*':
 		if ( member->type != MEMBERTYPE_MASTER )
 		    break;
+		member->dtmf_ts = time(NULL);
 		member->dtmf_admin_mode=1;
 		member->dtmf_buffer[0]='\0';
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode activated\n" );
@@ -117,11 +118,13 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 			member->dtmf_buffer[0]='\0';
 			member->dtmf_long_insert=1;
 			member->dtmf_help_mode=1;
+			member->dtmf_ts = time(NULL);
 		break;
 	    case '9':
 		    conference_queue_sound(member,"conf-getpin");
 		    member->dtmf_buffer[0]='\0';
 		    member->dtmf_long_insert=1;
+			member->dtmf_ts = time(NULL);
 		break;
 	    case '0': {
 		    char buf[10];
@@ -142,9 +145,11 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 	    switch (subclass) {
 		case '*':
 		    member->dtmf_long_insert=0;
+			member->dtmf_ts = 0;
 		    break;
 		case '#':
 		    member->dtmf_long_insert=0;
+			member->dtmf_ts = 0;
 		    ast_log(AST_CONF_DEBUG,"Pin entered %s does match ?\n",member->dtmf_buffer);
 		    if ( strcmp( member->dtmf_buffer, member->conf->pin ) )
 			conference_queue_sound(member,"conf-invalidpin");
@@ -155,6 +160,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    member->dtmf_buffer[0]='\0';
 		    break;
 		default: {
+			member->dtmf_ts = time(NULL);
 		    char t[2];
 		    t[0] = subclass;
 		    t[1] = '\0';
@@ -201,6 +207,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		member->dtmf_long_insert=0;
 		member->dtmf_buffer[0]='\0';
 		member->dtmf_help_mode=0;
+		member->dtmf_ts = 0;
     }
 
 	else if ( member->dtmf_admin_mode && member->dtmf_help_mode ) {
@@ -235,6 +242,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		member->dtmf_buffer[0]='\0';
 		member->dtmf_help_mode=0;
 		member->dtmf_admin_mode=0;
+		member->dtmf_ts = 0;
 	}
 
     else if (member->dtmf_admin_mode && !member->dtmf_help_mode) {
@@ -243,6 +251,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 
 	    if ( subclass == '*' ) { 
 		member->dtmf_admin_mode=0;
+		member->dtmf_ts = 0;
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode deactivated\n" );
 	    }
 		else if ( subclass == '8' ) {
@@ -252,6 +261,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 	    else if ( subclass == '#' ) { 
 		member->dtmf_admin_mode=0;
 		if ( strlen(member->dtmf_buffer) >= 1 ) {
+			member->dtmf_ts = 0;
 		    ast_log(AST_CONF_DEBUG,"Admin mode. Trying to parse command %s\n",member->dtmf_buffer );
 		    conference_parse_admin_command(member);
 		}
@@ -266,7 +276,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    strcat(member->dtmf_buffer,t);
 		}
 		ast_log(AST_CONF_DEBUG,"DTMF Buffer: %s \n",member->dtmf_buffer);
-
+		member->dtmf_ts = time(NULL);
 	    }
     }
 

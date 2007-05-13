@@ -75,6 +75,8 @@ extern ast_mutex_t conflist_lock;
 #define ENABLE_VAD		1
 #define ENABLE AUTOGAIN		0	// Not used yet
 
+#define AST_CONF_DTMF_TIMEOUT 2
+
 // sample information for AST_FORMAT_SLINEAR format
 #define AST_CONF_SAMPLE_RATE_8K 	8000
 #define AST_CONF_SAMPLE_RATE_16K 	16000

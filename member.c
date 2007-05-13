@@ -799,6 +799,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     member->dtmf_admin_mode=0;
     member->dtmf_long_insert=0;
 	member->dtmf_help_mode=0;
+	member->dtmf_ts=0;
 
     //Play conference sounds by default
     member->dont_play_any_sound=0;
