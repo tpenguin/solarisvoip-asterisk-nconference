@@ -74,7 +74,7 @@ struct ast_conf_member
 	short dtmf_admin_mode;
 	short dtmf_long_insert;
 	char dtmf_buffer[64];
-
+	short dtmf_help_mode;
 
 
 

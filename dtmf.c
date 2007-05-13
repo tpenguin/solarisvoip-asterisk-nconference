@@ -113,6 +113,11 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		if (!member->dont_play_any_sound)
 		    conference_queue_sound(member,"beep");
 		break;
+		case '8':
+			member->dtmf_buffer[0]='\0';
+			member->dtmf_long_insert=1;
+			member->dtmf_help_mode=1;
+		break;
 	    case '9':
 		    conference_queue_sound(member,"conf-getpin");
 		    member->dtmf_buffer[0]='\0';
@@ -132,7 +137,8 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		ast_log(AST_CONF_DEBUG,"Don't know how to manage %c DTMF\n",subclass);
 		break;
 	}
-    else if ( !member->dtmf_admin_mode && member->dtmf_long_insert ) {
+
+    else if ( !member->dtmf_admin_mode && member->dtmf_long_insert && !member->dtmf_help_mode ) {
 	    switch (subclass) {
 		case '*':
 		    member->dtmf_long_insert=0;
@@ -161,14 +167,88 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 	    }
     }
 
-    else if (member->dtmf_admin_mode) {
+    else if ( !member->dtmf_admin_mode && member->dtmf_long_insert && member->dtmf_help_mode ) {
+		ast_log(AST_CONF_DEBUG, "User help for key '%c'.\n", subclass);
+	    switch (subclass) {
+		case '1':
+			conference_queue_sound(member,"conf-help-volume-lower");
+			break;
+		case '2':
+			conference_queue_sound(member,"conf-help-mute-wmusic");
+			break;
+		case '3':
+			conference_queue_sound(member,"conf-help-volume-higher");
+			break;
+		case '5':
+			conference_queue_sound(member,"conf-help-mute");
+			break;
+		case '6':
+			conference_queue_sound(member,"conf-help-toggle-announce");
+			break;
+		case '8':
+			conference_queue_sound(member,"conf-help-help");
+			break;
+		case '9':
+			conference_queue_sound(member,"conf-help-enter-moderator-pin");
+			break;
+		case '0':
+			conference_queue_sound(member,"conf-help-list-members");
+			break;
+		case '*':
+			conference_queue_sound(member,"conf-help-admin-functions");
+			break;
+		}
+		member->dtmf_long_insert=0;
+		member->dtmf_buffer[0]='\0';
+		member->dtmf_help_mode=0;
+    }
+
+	else if ( member->dtmf_admin_mode && member->dtmf_help_mode ) {
+		ast_log(AST_CONF_DEBUG, "Admin help for key '%c'.\n", subclass);
+		switch (subclass) {
+		case '1':
+			conference_queue_sound(member,"conf-help-admin-outcall");
+			break;
+		case '2':
+			conference_queue_sound(member,"conf-help-admin-private-consult");
+			break;
+		case '4':
+			conference_queue_sound(member,"conf-help-admin-toggle-sounds");
+			break;
+		case '5':
+			conference_queue_sound(member,"conf-help-admin-mute-all");
+			break;
+		case '6':
+			conference_queue_sound(member,"conf-help-admin-mute-wmusic");
+			break;
+		case '7':
+			conference_queue_sound(member,"conf-help-admin-toggle-lock");
+			break;
+		case '9':
+			conference_queue_sound(member,"conf-help-admin-set-pin");
+			break;
+		case '0':
+			conference_queue_sound(member,"conf-help-admin-hangup-options");
+			break;
+		}
+		member->dtmf_long_insert=0;
+		member->dtmf_buffer[0]='\0';
+		member->dtmf_help_mode=0;
+		member->dtmf_admin_mode=0;
+	}
+
+    else if (member->dtmf_admin_mode && !member->dtmf_help_mode) {
 	
 	    // *************************************************************** DTMF ADMIN MODE
 
 	    if ( subclass == '*' ) { 
 		member->dtmf_admin_mode=0;
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode deactivated\n" );
-	    } 
+	    }
+		else if ( subclass == '8' ) {
+			ast_log(LOG_NOTICE,"Enter help menu.\n");
+			member->dtmf_help_mode = 1;
+		}
 	    else if ( subclass == '#' ) { 
 		member->dtmf_admin_mode=0;
 		if ( strlen(member->dtmf_buffer) >= 1 ) {
