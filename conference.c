@@ -202,9 +202,13 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 		    ast_mutex_lock( &member->lock ) ;
 		    if ( cq->param_number == 1) {
 			member->force_on_hold =  1;
+			if (member->is_speaking == 1) {
+				member->is_speaking = 0;
+			}
 		    } 
 		    else {
 			member->force_on_hold = -1;
+			member->is_speaking = 1;
 		    }
 		    ast_mutex_unlock( &member->lock ) ;
 		    ast_log(AST_CONF_DEBUG,"(CQ) Member: consult playing moh set to %d\n",cq->param_number);
@@ -223,9 +227,13 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 		    ast_mutex_lock( &member->lock ) ;
 		    if ( cq->param_number == 1) {
 			member->force_on_hold =  1;
+			if (member->is_speaking == 1) {
+				member->is_speaking = 0;
+			}
 		    } 
 		    else {
 			member->force_on_hold = -1;
+			member->is_speaking = 1;
 		    }
 		    ast_mutex_unlock( &member->lock ) ;
 		    ast_log(AST_CONF_DEBUG,"(CQ) Member: playing moh set to %d\n",cq->param_number);
