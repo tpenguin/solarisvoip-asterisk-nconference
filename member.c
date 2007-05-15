@@ -898,6 +898,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     if ( member->cbuf == NULL ) 
     {
     	ast_log( LOG_ERROR, "unable to malloc member_cbuffer\n" ) ;
+        free(member->channel_name);
     	return NULL ;
     } else {
 	// initialize it
