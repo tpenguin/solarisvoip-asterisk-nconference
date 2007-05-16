@@ -15,3 +15,5 @@
  */
 
 int app_conference_main( struct ast_channel* chan, void* data ) ;
+char *acf_nconfcount_exec(struct ast_channel *chan, char *cmd, char *data, char *buf, size_t len) ;
+

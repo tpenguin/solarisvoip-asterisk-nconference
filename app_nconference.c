@@ -72,6 +72,20 @@ static char *descrip = APP_CONFERENCE_NAME "(confno/options/pin):\n"
 "Please note that the options parameter list delimiter is '/'\n"
 "Returns 0 if the user exits with the '#' key, or -1 if the user hangs up.\n" ;
 
+struct ast_custom_function acf_nconfcount = {
+	.name = "NCONFCOUNT",
+	.synopsis = "Retrieves number of members in an NConference",
+	.syntax = "NCONFCOUNT(confno|[options])",
+	.desc =
+	"The options string may contain zero or more of the following:\n"
+	"   'M': Caller is Moderator (can do everything).\n"
+	"   'S': Caller is Speaker.\n"
+	"   'L': Caller is Listener (cannot talk).\n"
+	"   'T': Caller is Talker (cannot listen but can only speak).\n"
+	"   'C': Caller is Consultant (can talk only to moderator).\n",
+	.read = acf_nconfcount_exec,
+};
+
 STANDARD_LOCAL_USER ;
 LOCAL_USER_DECL;
 
@@ -79,6 +93,7 @@ int unload_module( void ) {
 	ast_log( LOG_NOTICE, "unloading " APP_CONFERENCE_NAME " module\n" );
 	STANDARD_HANGUP_LOCALUSERS;
 	unregister_conference_cli();
+	ast_custom_function_unregister(&acf_nconfcount);
 	return ast_unregister_application( app ) ;
 }
 
@@ -86,6 +101,7 @@ int load_module( void ) {
 	ast_log( LOG_NOTICE, "Loading " APP_CONFERENCE_NAME " module\n" );
 	init_conference() ;
 	register_conference_cli();
+	ast_custom_function_register(&acf_nconfcount);
 	return ast_register_application( app, app_conference_main, synopsis, descrip ) ;
 }
 
@@ -103,7 +119,6 @@ char *key()
 {
         return ASTERISK_GPL_KEY;
 }
-
 
 /************************************************************
  *        Main Conference function
@@ -123,3 +138,87 @@ int app_conference_main( struct ast_channel* chan, void* data ) {
 	LOCAL_USER_REMOVE( u ) ;
 	return res ;
 }
+
+char *acf_nconfcount_exec(struct ast_channel *chan, char *cmd, char *data, char *buf, size_t len) {
+	struct localuser *u;
+	char *info, *options=NULL, *confno;
+	char tmpbuf[16];
+
+	*buf = '\0';
+	
+	if (ast_strlen_zero(data)) {
+		ast_log(LOG_WARNING, "NCONFCOUNT requires an argument (confno)\n");
+		return buf;
+	}
+
+	LOCAL_USER_ACF_ADD(u);
+
+	info = ast_strdupa(data);
+	if (!info) {
+		ast_log(LOG_ERROR, "Out of memory\n");
+		LOCAL_USER_REMOVE(u);
+		return buf;
+	}
+	
+	confno = strsep(&info, "|");
+	options = info;
+
+	struct ast_conference *conf = find_conf(confno);
+	if (conf == NULL) {
+		LOCAL_USER_REMOVE(u);
+		return buf;
+	}
+
+	if (ast_strlen_zero(options)) {
+		/* Count All Members */
+		snprintf(tmpbuf, 15, "%d", conf->membercount);
+		ast_copy_string(buf, tmpbuf, len);
+	} else {
+		/* Count Certain types of Members */
+		int i;
+		short counter = 0;
+		struct ast_conf_member *member_list = conf->memberlist;
+		while (member_list) {
+
+			for ( i = 0 ; i < strlen(options) ; ++i ) {
+				switch (options[i]) {
+				case 'M':
+					if (member_list->type == MEMBERTYPE_MASTER) {
+						++counter;
+					}
+					break ;
+				case 'S':
+					if (member_list->type == MEMBERTYPE_SPEAKER) {
+						++counter;
+					}
+					break ;
+				case 'L':
+					if (member_list->type == MEMBERTYPE_LISTENER) {
+						++counter;
+					}
+					break ;
+				case 'T':
+					if (member_list->type == MEMBERTYPE_TALKER) {
+						++counter;
+					}
+					break ;
+				case 'C':
+					if (member_list->type == MEMBERTYPE_CONSULTANT) {
+						++counter;
+					}
+					break ;
+				default:
+					ast_log(LOG_WARNING, "Unknown option '%c'.\n", options[i]);
+				}
+			}
+
+			member_list = member_list->next;
+		}
+		snprintf(tmpbuf, 15, "%d", counter);
+		ast_copy_string(buf, tmpbuf, len);
+	}
+
+	LOCAL_USER_REMOVE(u);
+	return buf;
+}
+
