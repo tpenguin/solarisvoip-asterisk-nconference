@@ -341,6 +341,13 @@ int member_exec( struct ast_channel* chan, void* data ) {
 
     ast_log( AST_CONF_DEBUG, "Launching NConference %s\n", "$Revision: 2325 $" ) ;
 
+	// make sure we have a channel to process
+	if ( chan == NULL )
+	{
+	    ast_log( LOG_NOTICE, "member channel has closed\n" ) ;
+	    return -1 ;
+	}
+
     if (chan->_state != AST_STATE_UP)
 	if ( (res = ast_answer( chan )) )
 	{
@@ -487,13 +494,6 @@ int member_exec( struct ast_channel* chan, void* data ) {
 	usleep(1000);
 #endif
 
-	// make sure we have a channel to process
-	if ( chan == NULL )
-	{
-	    ast_log( LOG_NOTICE, "member channel has closed\n" ) ;
-	    break ;
-	}
-
 	//-----------------//
 	// INCOMING FRAMES //
 	//-----------------//
@@ -609,27 +609,22 @@ int member_exec( struct ast_channel* chan, void* data ) {
 
     }
 
-    //
-    // clean up
-    //
+	// Run AGI script
+	if (member->agi) {
+		char * agi = pbx_builtin_getvar_helper(chan, "AGI_CONF_LEAVE");
+		if (agi) {
+			app = pbx_findapp("agi");
+			if (app) {
+				pbx_exec(chan, app, agi, 1);
+			}
+		} else {
+			ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_LEAVE missing.\n");
+		}
+	}
+	if (conf->agi) 
+		handle_conf_agi_end(conf->name, member);        
+	member->remove_flag = 1 ;
 
-    if ( member != NULL ) {
-        // Run AGI script
-        if (member->agi) {
-            char * agi = pbx_builtin_getvar_helper(chan, "AGI_CONF_LEAVE");
-            if (agi) {
-                app = pbx_findapp("agi");
-                if (app) {
-                    pbx_exec(chan, app, agi, 1);
-                }
-            } else {
-                ast_log(LOG_WARNING, "AGI requested, but AGI_CONF_LEAVE missing.\n");
-            }
-        }
-        if (conf->agi) 
-            handle_conf_agi_end(conf->name, member);        
-        member->remove_flag = 1 ;
-    }
     ast_log( AST_CONF_DEBUG, "end member event loop, time_entered => %ld -  removal: %d\n", member->time_entered.tv_sec, member->remove_flag ) ;
 
     //ast_log( AST_CONF_DEBUG, "Deactivating generator - Channel => %s\n", member->chan->name ) ;
