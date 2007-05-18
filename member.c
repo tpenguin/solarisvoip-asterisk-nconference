@@ -687,7 +687,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     ast_log( AST_CONF_DEBUG, "attempting to parse passed params, stringp => %s\n", stringp ) ;
 	
     // parse the id
-    if ( ( token = strsep( &stringp, "/" ) ) != NULL )
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
     {
     	member->id = malloc( strlen( token ) + 1 ) ;
     	strcpy( member->id, token ) ;
@@ -700,7 +700,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     }
 
     // parse the flags
-    if ( ( token = strsep( &stringp, "/" ) ) != NULL )
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
     {
 	member->flags = malloc( strlen( token ) + 1 ) ;
 	strcpy( member->flags, token ) ;
@@ -713,7 +713,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     }
 
     // parse the pin
-    if ( ( token = strsep( &stringp, "/" ) ) != NULL )
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
     {
 	member->pin = malloc( strlen( token ) + 1 ) ;
 	strcpy( member->pin, token ) ;
