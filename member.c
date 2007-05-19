@@ -471,8 +471,21 @@ int member_exec( struct ast_channel* chan, void* data ) {
 
     //Play the join info messages
     if (!member->force_remove_flag && !member->quiet_mode) {
-	conference_queue_sound( member, "conf-youareinconfnum" );
-	conference_queue_number( member, member->id );
+		if (ast_strlen_zero(member->intro_sounds)) {
+			conference_queue_sound( member, "conf-youareinconfnum" );
+			conference_queue_number( member, member->id );
+		} else {
+			char argstr[128];
+			char *stringp, *token;
+
+			strncpy(argstr, member->intro_sounds, sizeof(argstr) - 1);
+			stringp = argstr;
+
+			while ((token = strsep(&stringp, "&")) != NULL) {
+				conference_queue_sound(member, token);
+				ast_log(AST_CONF_DEBUG, "Playing intro sound: %s\n", token);
+			}
+		}
     }
 
     // The member at the very beginningis speaking
@@ -724,7 +737,46 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
 	member->pin = malloc( sizeof( char ) ) ;
 	memset( member->pin, 0x0, sizeof( char ) ) ;
     }
-	
+
+    // intro sounds
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
+    {
+	member->intro_sounds = malloc( strlen( token ) + 1 ) ;
+	strcpy( member->intro_sounds, token ) ;
+    }
+    else
+    {
+	// make member->intro_sounds something 
+	member->intro_sounds = malloc( sizeof( char ) ) ;
+	memset( member->intro_sounds, 0x0, sizeof( char ) ) ;
+    }
+
+    // entry sounds
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
+    {
+	member->entry_sounds = malloc( strlen( token ) + 1 ) ;
+	strcpy( member->entry_sounds, token ) ;
+    }
+    else
+    {
+	// make member->entry_sounds something 
+	member->entry_sounds = malloc( sizeof( char ) ) ;
+	memset( member->entry_sounds, 0x0, sizeof( char ) ) ;
+    }
+
+    // exit sounds
+    if ( ( token = strsep( &stringp, "|" ) ) != NULL )
+    {
+	member->exit_sounds = malloc( strlen( token ) + 1 ) ;
+	strcpy( member->exit_sounds, token ) ;
+    }
+    else
+    {
+	// make member->exit_sounds something 
+	member->exit_sounds = malloc( sizeof( char ) ) ;
+	memset( member->exit_sounds, 0x0, sizeof( char ) ) ;
+    }
+
     // debugging
     ast_log( 
     	AST_CONF_DEBUG, 
@@ -959,6 +1011,18 @@ struct ast_conf_member* delete_member( struct ast_conf_member* member )
     //
     // clean up member flags
     //
+    if ( member->intro_sounds != NULL )
+    {
+	free( member->intro_sounds ) ;
+    }
+    if ( member->entry_sounds != NULL )
+    {
+	free( member->entry_sounds ) ;
+    }
+    if ( member->exit_sounds != NULL )
+    {
+	free( member->exit_sounds ) ;
+    }
     if ( member->id != NULL )
     {
 	ast_log( AST_CONF_DEBUG, "freeing member id, name => %s\n", member->channel_name ) ;

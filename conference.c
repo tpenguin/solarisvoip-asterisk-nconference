@@ -158,6 +158,23 @@ static void ast_conf_command_execute( struct ast_conference *conf ) {
 		member = member->next ;
 	    } 
 	    break;
+	case CONF_ACTION_QUEUE_MODERATOR_SOUND:
+		// get list of conference members
+		member = conf->memberlist ;
+		// loop over member list to retrieve queued frames
+		while ( member != NULL )
+		{
+		if (member != cq->issuedby && member->type == MEMBERTYPE_MASTER) {
+			ast_mutex_lock( &member->lock ) ;
+			queue_incoming_silent_frame(member,2);
+			if ( !(member->quiet_mode == 1 && cq->param_number) )
+			conference_queue_sound( member, cq->param_text );
+			ast_mutex_unlock( &member->lock ) ;
+			// adjust our pointer to the next inline
+		}
+			member = member->next ;
+		} 
+		break;
 	case CONF_ACTION_QUEUE_SOUND: 
 	    // get list of conference members
 	    member = conf->memberlist ;
@@ -319,8 +336,25 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
 
 	if (announce) {
 		queue_incoming_silent_frame(member,2);
-		add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
-		add_command_to_queue( conf, member, CONF_ACTION_QUEUE_SOUND  , 1, "conf-hasjoin" );
+		if (ast_strlen_zero(member->entry_sounds)) {
+			add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
+			add_command_to_queue( conf, member, CONF_ACTION_QUEUE_SOUND  , 1, "conf-hasjoin" );
+		} else {
+			char argstr[128];
+			char *stringp, *token;
+
+			strncpy(argstr, member->entry_sounds, sizeof(argstr) - 1);
+			stringp = argstr;
+
+			while ((token = strsep(&stringp, "&")) != NULL) {
+				if (member->type == MEMBERTYPE_CONSULTANT) {
+					add_command_to_queue(conf, member, CONF_ACTION_QUEUE_MODERATOR_SOUND, 1, token);
+				} else {
+					add_command_to_queue(conf, member, CONF_ACTION_QUEUE_SOUND, 1, token);
+				}
+				ast_log(AST_CONF_DEBUG, "Playing entry sound: %s\n", token);
+			}
+		}
 	
 		ast_log( AST_CONF_DEBUG, "member added to conference, name => %s\n", conf->name ) ;	
 	
@@ -458,8 +492,25 @@ void conference_exec( struct ast_conference *conf )
 	    	ast_log( AST_CONF_DEBUG, "found member slated for removal, channel => %s\n", member->channel_name ) ;
 	    	temp_member = member->next ;
 			queue_incoming_silent_frame(member,2);
-			add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
-			add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_SOUND , 1, "conf-hasleft" );
+			if (ast_strlen_zero(member->exit_sounds)) {
+				add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
+				add_command_to_queue( conf, NULL, CONF_ACTION_QUEUE_SOUND , 1, "conf-hasleft" );
+			} else {
+				char argstr[128];
+				char *stringp, *token;
+	
+				strncpy(argstr, member->exit_sounds, sizeof(argstr) - 1);
+				stringp = argstr;
+	
+				while ((token = strsep(&stringp, "&")) != NULL) {
+					if (member->type == MEMBERTYPE_CONSULTANT) {
+						add_command_to_queue(conf, member, CONF_ACTION_QUEUE_MODERATOR_SOUND, 1, token);
+					} else {
+						add_command_to_queue(conf, member, CONF_ACTION_QUEUE_SOUND, 1, token);
+					}
+					ast_log(AST_CONF_DEBUG, "Playing exit sound: %s\n", token);
+				}
+			}
 	    	remove_member( conf, member ) ;
 	    	member = temp_member ;
 	    	continue ;
@@ -1025,10 +1076,14 @@ int conference_parse_admin_command(struct ast_conf_member *member) {
 	    res = conf_do_originate(member,parameters);
 	    break;
 	case '2':
-		if      ( parameters[0] == '0' )
-			add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 0, "" );
-		else if ( parameters[0] == '1' )
-			add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 1, "" );
+		if      ( parameters[0] == '0' ) {
+				add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 0, "" );
+				conference_queue_sound( member, "conf-consultation-off" );
+		}
+		else if ( parameters[0] == '1' ) {
+				add_command_to_queue( member->conf, member, CONF_ACTION_CONSULT_PLAYMOH , 1, "" );
+				conference_queue_sound( member, "conf-consultation-on" );
+		}
 		else
 		conference_queue_sound( member, "beeperr" );
 		break;

@@ -130,6 +130,10 @@ struct ast_conf_member
     short monitor;
     short monitor_join;
     short agi;
+
+	char *intro_sounds;
+	char *entry_sounds;
+	char *exit_sounds;
 } ;
 
 
