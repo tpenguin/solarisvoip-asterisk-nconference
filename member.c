@@ -474,17 +474,6 @@ int member_exec( struct ast_channel* chan, void* data ) {
 		if (ast_strlen_zero(member->intro_sounds)) {
 			conference_queue_sound( member, "conf-youareinconfnum" );
 			conference_queue_number( member, member->id );
-		} else {
-			char argstr[128];
-			char *stringp, *token;
-
-			strncpy(argstr, member->intro_sounds, sizeof(argstr) - 1);
-			stringp = argstr;
-
-			while ((token = strsep(&stringp, "&")) != NULL) {
-				conference_queue_sound(member, token);
-				ast_log(AST_CONF_DEBUG, "Playing intro sound: %s\n", token);
-			}
 		}
     }
 

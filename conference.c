@@ -355,7 +355,19 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
 				ast_log(AST_CONF_DEBUG, "Playing entry sound: %s\n", token);
 			}
 		}
-	
+		if (!ast_strlen_zero(member->intro_sounds)) {
+			char argstr[128];
+			char *stringp, *token;
+
+			strncpy(argstr, member->intro_sounds, sizeof(argstr) - 1);
+			stringp = argstr;
+
+			while ((token = strsep(&stringp, "&")) != NULL) {
+				conference_queue_sound(member, token);
+				ast_log(AST_CONF_DEBUG, "Playing intro sound: %s\n", token);
+			}
+		}
+
 		ast_log( AST_CONF_DEBUG, "member added to conference, name => %s\n", conf->name ) ;	
 	
 		manager_event(
