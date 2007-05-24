@@ -677,7 +677,7 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     // initialize mutex
     ast_mutex_init( &member->lock ) ;
 	
-    char argstr[1024];
+    char argstr[4096];
     char *stringp, *token ;
 
     // copy the passed data

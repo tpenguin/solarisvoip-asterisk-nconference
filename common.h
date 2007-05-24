@@ -64,7 +64,7 @@ extern ast_mutex_t conflist_lock;
 #define AST_CONF_DEBUG 	LOG_NOTICE
 #endif
 
-
+#define APP_CONFERENCE_CNAM     "DigiDial"
 
 #define APP_CONFERENCE_NAME     "NConference"
 #define APP_CONFERENCE_MANID	"NConference-"

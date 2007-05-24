@@ -40,7 +40,7 @@ struct ast_conf_command_queue
     int  param_number;
 
     // An optional string value passed
-    char param_text[80];
+    char param_text[256];
 
     // The member who ordered this command
     struct ast_conf_member *issuedby;

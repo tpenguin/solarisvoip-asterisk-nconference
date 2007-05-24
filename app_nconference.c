@@ -32,11 +32,11 @@ ASTERISK_FILE_VERSION( __FILE__, "$Revision: 2308 $");
  *        Text Descriptions
  ***********************************************************/
 
-static char *tdesc = "Navynet Channel Independent Conference Application (" CONF_VERSION ")" ;
+static char *tdesc = APP_CONFERENCE_CNAM " Channel Independent Conference Application (" CONF_VERSION ")" ;
 
 static char *app = APP_CONFERENCE_NAME ;
 
-static char *synopsis = "Navynet Channel Independent Conference (" CONF_VERSION ")" ;
+static char *synopsis = APP_CONFERENCE_CNAM " Channel Independent Conference (" CONF_VERSION ")" ;
 
 static char *descrip = APP_CONFERENCE_NAME "(confno|[options]|[pin]|[introsound1[&introsound2]]|[entrysound1[&entrysound2]]|[exitsound[&exitsound2]]):\n"
 "\n"

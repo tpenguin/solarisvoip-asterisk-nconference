@@ -32,12 +32,12 @@ else
    CONF_VERSION:=SVN
 endif
 
-CFLAGS+=-fPIC -pipe -Wall -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -g -Iinclude -I../include -D_REENTRANT -D_GNU_SOURCE -O6  -DAST_MODULE=\"app_nconference\"
+CFLAGS+=-fPIC -pipe -Wall -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -g -Iinclude -I../include -D_REENTRANT -D_GNU_SOURCE -O6  -DAST_MODULE=\"app_nconference\" $(EXTRA_CFLAGS)
 CFLAGS+=-I../asterisk
 CFLAGS+=-I../asterisk/include
 CFLAGS+=-D_GNU_SOURCE
 CFLAGS+=-DCONF_VERSION=\"$(CONF_VERSION)\"
-SOLINK+=-shared -fpic
+SOLINK+=-shared -fPIC $(EXTRA_LDFLAGS)
 
 OSARCH=$(shell uname -s)
 ifeq ($(OSARCH),SunOS)

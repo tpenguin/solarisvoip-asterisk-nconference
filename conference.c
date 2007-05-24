@@ -82,7 +82,7 @@ int add_command_to_queue (
 	cq_last->next = cq;
     }
 
-    ast_log( AST_CONF_DEBUG, "Conference, name => %s - Added command %d params: '%d/%s'\n", 
+    ast_log( AST_CONF_DEBUG, "Conference, name => %s - Added command %d params: '%d|%s'\n", 
 	      conf->name, cq->command, cq->param_number, cq->param_text );
 
     ast_mutex_unlock( &conf->lock ) ;
@@ -999,7 +999,7 @@ int conf_do_originate(struct ast_conf_member *member, char *ext) {
 
 
 	strcat(appdata,member->id);
-	strcat(appdata,"/");
+	strcat(appdata,"|");
 	if ( (var = pbx_builtin_getvar_helper(member->chan, "NCONF_OUTBOUND_PARAMS")) )
 	    strcat(appdata,var);
 	else {
@@ -1017,7 +1017,7 @@ int conf_do_originate(struct ast_conf_member *member, char *ext) {
 	if ( (var = pbx_builtin_getvar_helper(member->chan, "NCONF_OUTBOUND_CID_NAME")) )
 	    ast_copy_string( fast->cid_name, var, sizeof(fast->cid_name) );
 	else
-	    ast_copy_string( fast->cid_name,"NavyConference",sizeof(fast->cid_name) );
+	    ast_copy_string( fast->cid_name,APP_CONFERENCE_CNAM " Conf",sizeof(fast->cid_name) );
 
 	if ( (var = pbx_builtin_getvar_helper(member->chan, "NCONF_OUTBOUND_CID_NUM")) )
 	    ast_copy_string( fast->cid_num, var,sizeof(fast->cid_num) );
