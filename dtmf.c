@@ -255,7 +255,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		member->dtmf_ts = 0;
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode deactivated\n" );
 	    }
-		else if ( subclass == '8' ) {
+		else if ( subclass == '8' && strlen(member->dtmf_buffer) == 0 ) {
 			ast_log(LOG_NOTICE,"Enter help menu.\n");
 			member->dtmf_help_mode = 1;
 		}
