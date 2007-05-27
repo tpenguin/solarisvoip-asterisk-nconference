@@ -35,13 +35,14 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 
 	switch (subclass) {
 	    case '*':
-		if ( member->type != MEMBERTYPE_MASTER )
+		if ( member->type != MEMBERTYPE_MASTER ) {
+		    conference_queue_sound( member, "beeperr" );
 		    break;
+		}
 		member->dtmf_ts = time(NULL);
 		member->dtmf_admin_mode=1;
 		member->dtmf_buffer[0]='\0';
 		ast_log(AST_CONF_DEBUG,"Dialplan admin mode activated\n" );
-		conference_queue_sound( member, "conf-sysop" );
 		break;
 	    case '1': 
 		conference_queue_sound( member, "beep" );
@@ -82,14 +83,18 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		    // if we disable VAD, Then the user is always speaking 
 		    if (!member->enable_vad) {
 			member->is_speaking = 1;
-			conference_queue_sound( member, "disabled" );
+			conference_queue_sound( member, "conf-disable-vad" );
 		    } else 
-			conference_queue_sound( member, "enabled" );
+			conference_queue_sound( member, "conf-enable-vad" );
 		    ast_log(AST_CONF_DEBUG,"Member VAD set to %d\n",member->enable_vad);
 		}
-		else
+		else {
 #endif
 		    ast_log(AST_CONF_DEBUG,"Member not enabled for VAD\n");
+		    conference_queue_sound( member, "beeperr" );
+#if ENABLE_VAD
+		}
+#endif
 		break;
 	    case '5':
 		member->talk_mute = (member->talk_mute == 0 ) ? 1 : 0;
@@ -109,22 +114,33 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		ast_log(AST_CONF_DEBUG,"Member Talk MUTE set to %d\n", member->talk_mute);
 		break;
 	    case '6':
+// Toggle announcements on and off for non-moderators disabled for DigiDial use
+#if 0
 		member->dont_play_any_sound =  !(member->dont_play_any_sound);
 		ast_log(AST_CONF_DEBUG,"Member dont_play_any_sound set to %d\n",member->dont_play_any_sound);
-		if (!member->dont_play_any_sound)
-		    conference_queue_sound(member,"beep");
+		if (!member->dont_play_any_sound) 
+		    conference_queue_sound(member,"conf-all-sounds-on");
+		else
+		    conference_queue_sound(member,"conf-all-sounds-off");
+#else
+		conference_queue_sound( member, "beeperr" );
+#endif
 		break;
-		case '8':
+	    case '7':
+		conference_queue_sound( member, "beeperr" );
+		break;
+	    case '8':
 			member->dtmf_buffer[0]='\0';
 			member->dtmf_long_insert=1;
 			member->dtmf_help_mode=1;
 			member->dtmf_ts = time(NULL);
 		break;
 	    case '9':
-		    conference_queue_sound(member,"conf-getpin");
+		    conference_queue_sound(member,"conf-enter-mod-code");
 		    member->dtmf_buffer[0]='\0';
 		    member->dtmf_long_insert=1;
-			member->dtmf_ts = time(NULL);
+		    /* Provide 6 extra seconds of timeout to allow input of digits */
+		    member->dtmf_ts = time(NULL) + 6;
 		break;
 	    case '0': 
 			if (!member->disable_dtmf_zero || member->type == MEMBERTYPE_MASTER) {
@@ -132,7 +148,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 				snprintf(buf, sizeof(buf), "%d", member->conf->membercount);
 				conference_queue_sound(member,"conf-thereare");
 				conference_queue_number(member, buf );
-				conference_queue_sound(member,"conf-peopleinconf");
+				conference_queue_sound(member,"conf-members-in-conf");
 		    }
 		break;
 
@@ -153,7 +169,7 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 			member->dtmf_ts = 0;
 		    ast_log(AST_CONF_DEBUG,"Pin entered %s does match ?\n",member->dtmf_buffer);
 		    if ( strcmp( member->dtmf_buffer, member->conf->pin ) )
-			conference_queue_sound(member,"conf-invalidpin");
+			conference_queue_sound(member,"conf-code-not-valid");
 		    else {
 			conference_queue_sound(member,"beep");
 			member->type = MEMBERTYPE_MASTER;
@@ -186,11 +202,22 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		case '3':
 			conference_queue_sound(member,"conf-help-volume-higher");
 			break;
+		case '4':
+			conference_queue_sound(member,"beeperr");
+			break;
 		case '5':
 			conference_queue_sound(member,"conf-help-mute");
 			break;
 		case '6':
+// Toggle announcements on and off for non-moderators disabled for DigiDial use
+#if 0
 			conference_queue_sound(member,"conf-help-toggle-announce");
+#else
+			conference_queue_sound(member,"beeperr");
+#endif
+			break;
+		case '7':
+			conference_queue_sound(member,"beeperr");
 			break;
 		case '8':
 			conference_queue_sound(member,"conf-help-help");
@@ -220,6 +247,9 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 		case '2':
 			conference_queue_sound(member,"conf-help-admin-private-consult");
 			break;
+		case '3':
+			conference_queue_sound(member,"beeperr");
+			break;
 		case '4':
 			conference_queue_sound(member,"conf-help-admin-toggle-sounds");
 			break;
@@ -231,6 +261,9 @@ int parse_dtmf_option( struct ast_conf_member *member, int subclass ) {
 			break;
 		case '7':
 			conference_queue_sound(member,"conf-help-admin-toggle-lock");
+			break;
+		case '8':
+			conference_queue_sound(member,"beeperr");
 			break;
 		case '9':
 			conference_queue_sound(member,"conf-help-admin-set-pin");

@@ -1100,10 +1100,15 @@ int conference_parse_admin_command(struct ast_conf_member *member) {
 		conference_queue_sound( member, "beeperr" );
 		break;
 	case '4':
-	    if      ( parameters[0] == '0' )
-	        add_command_to_queue( member->conf, member, CONF_ACTION_ENABLE_SOUNDS , 0, "" );
-	    else if ( parameters[0] == '1' )
+	    if      ( parameters[0] == '0' ) {
+		conference_queue_sound(member,"conf-all-sounds-off");
 	        add_command_to_queue( member->conf, member, CONF_ACTION_ENABLE_SOUNDS , 1, "" );
+	    }
+	    else if ( parameters[0] == '1' ) {
+		conference_queue_sound(member,"conf-all-sounds-on");
+
+	        add_command_to_queue( member->conf, member, CONF_ACTION_ENABLE_SOUNDS , 0, "" );
+	    }
 	    else
 		conference_queue_sound( member, "beeperr" );
 	    break;
@@ -1153,6 +1158,7 @@ int conference_parse_admin_command(struct ast_conf_member *member) {
 	default:
 	    ast_log(AST_CONF_DEBUG,"Admin mode: Action: %c parameters: %s. Invalid or unknown\n",
 		action, parameters);
+	    conference_queue_sound(member,"beeperr");
 	    break;
     }
 
