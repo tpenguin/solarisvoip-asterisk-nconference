@@ -126,6 +126,7 @@ struct ast_conf_member
         short auto_destroy_on_exit;
 
 	char clid[80];
+	char aclid[80];
 
     short monitor;
     short monitor_join;
@@ -134,6 +135,9 @@ struct ast_conf_member
 	char *intro_sounds;
 	char *entry_sounds;
 	char *exit_sounds;
+
+	short mute_incoming_sounds;
+	short hangup_go_on;
 } ;
 
 

@@ -470,7 +470,7 @@ int member_exec( struct ast_channel* chan, void* data ) {
     }
 
     //Play the join info messages
-    if (!member->force_remove_flag && !member->quiet_mode) {
+    if (!member->force_remove_flag && !member->quiet_mode && !member->mute_incoming_sounds) {
 		if (ast_strlen_zero(member->intro_sounds)) {
 			conference_queue_sound( member, "conf-youareinconfnum" );
 			conference_queue_number( member, member->id );
@@ -631,6 +631,11 @@ int member_exec( struct ast_channel* chan, void* data ) {
 
     //ast_log( AST_CONF_DEBUG, "Deactivating generator - Channel => %s\n", member->chan->name ) ;
     ast_generator_deactivate(chan);
+
+	if (member->hangup_go_on) {
+		ast_log(AST_CONF_DEBUG, "Hangup go on!\n");
+		return 0;
+	}
 
     return -1 ;
 		
@@ -799,6 +804,9 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
     member->monitor_join = 0 ;
     member->agi = 0 ;
 	member->disable_dtmf_zero = 0 ;
+	member->mute_incoming_sounds = 0 ;
+	member->hangup_go_on = 0 ;
+	member->aclid[0] = '\0' ;
 
     // record start time
     gettimeofday( &member->time_entered, NULL ) ;
@@ -920,6 +928,30 @@ struct ast_conf_member *create_member( struct ast_channel *chan, const char* dat
 		    break;
 		case '0':
 			member->disable_dtmf_zero = 1;
+			break;
+		case 'g': // continue in dialplan after hang-up
+			member->hangup_go_on = 1;
+			break;
+		case 'Q': // Mute all incoming sounds for caller AND members
+			member->mute_incoming_sounds = 1;
+			break;
+		case 'a': // Annoucement CLID
+			++i;
+			if (i < strlen( flags )) {
+				if (flags[i] == '(') {
+					++i;
+					if (i < strlen( flags )) {
+						int end = i, start = i;
+						while (flags[end] && (flags[end] != ')')) {	 
+								++end; ++i;
+						}
+						strncpy(member->aclid, &flags[start], end - start);
+						ast_log(AST_CONF_DEBUG, "Parsed caller id: %s\n", member->aclid);
+					} else
+						ast_log(LOG_WARNING, "A flag is missing arguments\n");
+				}
+			} else
+				ast_log(LOG_WARNING, "A flag is missing argument\n");
 			break;
 		default:
 		    ast_log( LOG_WARNING, "received invalid flag, chan => %s, flag => %c\n", 

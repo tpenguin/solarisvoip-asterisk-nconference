@@ -323,6 +323,10 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
     else
 	strncpy( member->clid, "", sizeof(member->clid) );
 
+	if(!ast_strlen_zero(member->aclid)) {
+		strncpy(member->clid, member->aclid, sizeof(member->clid));
+	}
+
 	/* We have a slight bug here.  Because of the architecture, we always 
 	 * add_member which may not be a valid idea if the conference was locked
 	 * and we are going to immediate remove the caller.
@@ -334,7 +338,7 @@ void add_member( struct ast_conference *conf, struct ast_conf_member *member )
 		}
 	}
 
-	if (announce) {
+	if (announce && !member->mute_incoming_sounds) {
 		queue_incoming_silent_frame(member,2);
 		if (ast_strlen_zero(member->entry_sounds)) {
 			add_command_to_queue( conf, member, CONF_ACTION_QUEUE_NUMBER , 1, member->clid );
@@ -1000,6 +1004,11 @@ int conf_do_originate(struct ast_conf_member *member, char *ext) {
 
 	strcat(appdata,member->id);
 	strcat(appdata,"|");
+	// add on the real caller id string for announcements
+	strcat(appdata,"a(");
+	strcat(appdata,ext);
+	strcat(appdata,")");
+	// add on the rest of the arguments
 	if ( (var = pbx_builtin_getvar_helper(member->chan, "NCONF_OUTBOUND_PARAMS")) )
 	    strcat(appdata,var);
 	else {
